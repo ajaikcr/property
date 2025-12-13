@@ -1,24 +1,22 @@
 import { LightningElement, track } from 'lwc';
 import getProperties from '@salesforce/apex/PropertiesController.getProperties';
-import getNearbyProperties from '@salesforce/apex/PropertiesController.getNearbyProperties';
 
 export default class PropertyList extends LightningElement {
 
-    @track properties = [];
-    @track totalRecords = 0;
-    @track loading = false;
-
-    pageNumber = 1;
-    pageSize = 25;
+    @track properties;
 
     minPrice;
     maxPrice;
-    status = '';
-    furnishing = '';
+    status;
+    furnishing;
+    distanceKm;
 
-    distanceKm = 5;
     userLat;
     userLng;
+
+    currentPage = 1;
+    totalPages = 1;
+    pageSize = 25;
 
     statusOptions = [
         { label: 'All', value: '' },
@@ -33,96 +31,89 @@ export default class PropertyList extends LightningElement {
         { label: 'Unfurnished', value: 'Unfurnished' }
     ];
 
-
     connectedCallback() {
-        this.loadProperties();
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                this.userLat = position.coords.latitude;
+                this.userLng = position.coords.longitude;
+                this.loadData();
+            },
+            () => {
+                this.loadData();
+            }
+        );
     }
 
-    // -------------------------
-    // MAIN PROPERTY LIST
-    // -------------------------
-    loadProperties() {
-        this.loading = true;
-
+    loadData() {
         getProperties({
-            pageNumber: this.pageNumber,
+            pageNumber: this.currentPage,
             pageSize: this.pageSize,
             minPrice: this.minPrice,
             maxPrice: this.maxPrice,
             status: this.status,
-            furnishing: this.furnishing
-        })
-        .then(result => {
-            this.properties = result.records;
-            this.totalRecords = result.total;
-            this.loading = false;
-        })
-        .catch(error => {
-            console.error(error);
-            this.loading = false;
-        });
-    }
-
-    // -------------------------
-    // NEARBY SEARCH
-    // -------------------------
-    handleDistanceChange(event) {
-        this.distanceKm = parseFloat(event.target.value);
-    }
-
-    getUserLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                this.userLat = position.coords.latitude;
-                this.userLng = position.coords.longitude;
-            });
-        }
-    }
-
-    loadNearby() {
-        if (!this.userLat || !this.userLng || !this.distanceKm) {
-            alert('Please allow location access and enter distance.');
-            return;
-        }
-
-        this.loading = true;
-
-        getNearbyProperties({
+            furnishing: this.furnishing,
             userLat: this.userLat,
             userLng: this.userLng,
             distanceKm: this.distanceKm
         })
         .then(result => {
-            this.properties = result;
-            this.totalRecords = result.length;
-            this.loading = false;
+            this.properties = result.records;
+            this.totalPages = result.totalPages;
         })
         .catch(error => {
             console.error(error);
-            this.loading = false;
         });
     }
 
-    // -------------------------
-    // PAGINATION
-    // -------------------------
-    nextPage() {
-        this.pageNumber += 1;
-        this.loadProperties();
+    handleMinPrice(event) {
+        this.minPrice = event.target.value;
+        this.resetAndLoad();
     }
 
-    prevPage() {
-        if (this.pageNumber > 1) {
-            this.pageNumber -= 1;
-            this.loadProperties();
+    handleMaxPrice(event) {
+        this.maxPrice = event.target.value;
+        this.resetAndLoad();
+    }
+
+    handleStatus(event) {
+        this.status = event.target.value;
+        this.resetAndLoad();
+    }
+
+    handleFurnishing(event) {
+        this.furnishing = event.target.value;
+        this.resetAndLoad();
+    }
+
+    handleDistance(event) {
+        this.distanceKm = event.target.value;
+        this.resetAndLoad();
+    }
+
+    resetAndLoad() {
+        this.currentPage = 1;
+        this.loadData();
+    }
+
+    handleNext() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.loadData();
+        }
+    }
+
+    handlePrev() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.loadData();
         }
     }
 
     get disablePrev() {
-        return this.pageNumber === 1 || this.loading;
+        return this.currentPage === 1;
     }
 
     get disableNext() {
-        return (this.pageNumber * this.pageSize) >= this.totalRecords || this.loading;
+        return this.currentPage === this.totalPages;
     }
 }
