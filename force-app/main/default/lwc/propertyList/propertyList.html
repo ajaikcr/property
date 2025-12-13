@@ -1,0 +1,94 @@
+<template>
+    <lightning-card title="Properties">
+        <div class="slds-p-around_medium">
+            <div class="slds-grid slds-wrap slds-grid_vertical-align-center slds-m-bottom_small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-p-horizontal_x-small">
+                    <lightning-input type="number" label="Min Price" value={minPrice} onchange={handleMinPrice}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-p-horizontal_x-small">
+                    <lightning-input type="number" label="Max Price" value={maxPrice} onchange={handleMaxPrice}></lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-p-horizontal_x-small">
+                    <lightning-combobox label="Status" value={status} options={statusOptions} onchange={handleStatus}></lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-4 slds-p-horizontal_x-small">
+                    <lightning-combobox label="Furnishing" value={furnishing} options={furnishingOptions} onchange={handleFurnishing}></lightning-combobox>
+                </div>
+            </div>
+
+            <div class="slds-m-bottom_small">
+                <lightning-button variant="brand" label="Apply Filters" onclick={applyFilters}></lightning-button>
+                <lightning-button variant="neutral" label="Clear" onclick={clearFilters} class="slds-m-left_small"></lightning-button>
+            </div>
+        </div>
+
+        <template if:true={properties}>
+            <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+                <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout">
+                    <thead>
+                        <tr class="slds-line-height_reset">
+                            <th scope="col"><div class="slds-truncate" title="Name">Name</div></th>
+                            <th scope="col"><div class="slds-truncate" title="Street">Street</div></th>
+                            <th scope="col"><div class="slds-truncate" title="City">City</div></th>
+                            <th scope="col"><div class="slds-truncate" title="Rent">Rent</div></th>
+                            <th scope="col"><div class="slds-truncate" title="Status">Status</div></th>
+                            <th scope="col"><div class="slds-truncate" title="Furnishing">Furnishing</div></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template for:each={properties} for:item="p">
+                            <tr key={p.Id}>
+                                <td><a href={p.Url} target="_self">{p.Name}</a></td>
+                                <td>{p.Street__c}</td>
+                                <td>{p.City__c}</td>
+                                <td>{p.Rent__c}</td>
+                                <td>{p.Status__c}</td>
+                                <td>{p.Furnishing_Status__c}</td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="slds-p-around_medium slds-grid slds-grid_align-spread">
+                <div>Page {pageNumber} — {pageSize} per page — {totalRecords} total</div>
+                <div>
+                    <lightning-button label="Previous" onclick={prevPage} disabled={disablePrev}></lightning-button>
+                    <lightning-button class="slds-m-left_small" label="Next" onclick={nextPage} disabled={disableNext}></lightning-button>
+                </div>
+            </div>
+        </template>
+
+        <template if:true={loading}>
+            <div class="slds-p-around_medium">Loading…</div>
+        </template>
+    </lightning-card>
+    <div class="slds-grid slds-wrap slds-m-top_medium">
+    <div class="slds-col slds-size_1-of-3 slds-p-right_small">
+        <lightning-input 
+            type="number" 
+            label="Distance (km)" 
+            value={distanceKm}
+            onchange={handleDistanceChange}>
+        </lightning-input>
+    </div>
+
+    <div class="slds-col slds-size_1-of-3 slds-p-right_small">
+        <lightning-button 
+            label="Use My Location"
+            onclick={getUserLocation}
+            class="slds-m-top_medium">
+        </lightning-button>
+    </div>
+
+    <div class="slds-col slds-size_1-of-3">
+        <lightning-button 
+            variant="brand"
+            label="Find Nearby"
+            onclick={loadNearby}
+            class="slds-m-top_medium">
+        </lightning-button>
+    </div>
+    </div>
+
+</template>
