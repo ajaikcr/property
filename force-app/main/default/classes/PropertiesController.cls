@@ -1,4 +1,8 @@
 public with sharing class PropertiesController {
+
+    /* =====================================================
+       LIST PROPERTIES (pagination + filters)
+       ===================================================== */
     @AuraEnabled(cacheable=true)
     public static Map<String, Object> getProperties(
         Integer pageNumber,
@@ -11,62 +15,51 @@ public with sharing class PropertiesController {
         if (pageNumber == null || pageNumber < 1) pageNumber = 1;
         if (pageSize == null || pageSize < 1) pageSize = 25;
 
-        String whereClause = ' WHERE Id != null ';
-        if (minPrice != null) {
-            whereClause += ' AND Rent__c >= ' + String.valueOf(minPrice);
+        List<String> conditions = new List<String>();
+        conditions.add('Id != null');
+
+        if (minPrice != null) conditions.add('Rent__c >= :minPrice');
+        if (maxPrice != null) conditions.add('Rent__c <= :maxPrice');
+        if (!String.isBlank(status)) {
+            conditions.add('Status__c = :status');
         }
-        if (maxPrice != null) {
-            whereClause += ' AND Rent__c <= ' + String.valueOf(maxPrice);
-        }
-        if (status != null && status.trim().length() > 0) {
-            whereClause += ' AND Status__c = \'' + String.escapeSingleQuotes(status) + '\'';
-        }
-        if (furnishing != null && furnishing.trim().length() > 0) {
-            whereClause += ' AND Furnishing_Status__c = \'' + String.escapeSingleQuotes(furnishing) + '\'';
+        if (!String.isBlank(furnishing)) {
+            conditions.add('Furnishing_Status__c = :furnishing');
         }
 
-        // total count using same whereClause
-        String countQuery = 'SELECT COUNT() FROM Properties__c' + whereClause;
-        Integer totalCount = (Integer) Database.countQuery(countQuery);
+        String whereClause = ' WHERE ' + String.join(conditions, ' AND ');
+        Integer offsetVal = (pageNumber - 1) * pageSize;
 
-        Integer offsetValue = (pageNumber - 1) * pageSize;
-        String dataQuery = 'SELECT Id, Name, Street__c, City__c, Rent__c, Status__c, Furnishing_Status__c, Latitude__c, Longitude__c' +
-                           ' FROM Properties__c' + whereClause +
-                           ' ORDER BY CreatedDate DESC LIMIT ' + String.valueOf(pageSize) +
-                           ' OFFSET ' + String.valueOf(offsetValue);
+        Integer total = (Integer) Database.countQuery(
+            'SELECT COUNT() FROM Properties__c' + whereClause
+        );
 
-        List<SObject> results = Database.query(dataQuery);
+        List<Properties__c> records = Database.query(
+            'SELECT Id, Name, Street__c, City__c, State__c, Country__c, ' +
+            'Rent__c, Status__c, Furnishing_Status__c ' +
+            'FROM Properties__c' +
+            whereClause +
+            ' ORDER BY CreatedDate DESC ' +
+            'LIMIT :pageSize OFFSET :offsetVal'
+        );
 
-        Map<String, Object> response = new Map<String, Object>();
-        response.put('records', results);
-        response.put('total', totalCount);
-        return response;
-    }
-    @AuraEnabled(cacheable=true)
-    public static List<Properties__c> getNearbyProperties(
-    Decimal userLat,
-    Decimal userLng,
-    Decimal distanceKm
-    ) {
-    if (userLat == null || userLng == null || distanceKm == null) {
-        return new List<Properties__c>();
+        return new Map<String, Object>{
+            'records' => records,
+            'total'   => total
+        };
     }
 
-    // Haversine formula using SOQL
-    String query =
-        'SELECT Id, Name, Street__c, City__c, Rent__c, Status__c, ' +
-        'Furnishing_Status__c, Latitude__c, Longitude__c ' +
-        'FROM Properties__c ' +
-        'WHERE ( ' +
-            'ACOS( ' +
-                'SIN(RADIANS(:userLat)) * SIN(RADIANS(Latitude__c)) + ' +
-                'COS(RADIANS(:userLat)) * COS(RADIANS(Latitude__c)) * ' +
-                'COS(RADIANS(Longitude__c) - RADIANS(:userLng)) ' +
-            ') * 6371 ' +     // Earth radius in KM
-        ') <= :distanceKm';
+    /* =====================================================
+       CREATE PROPERTY
+       ===================================================== */
+    @AuraEnabled
+    public static Id createProperty(Properties__c property) {
 
-    return Database.query(query);
-}
+        if (property == null) {
+            throw new AuraHandledException('Property details are required.');
+        }
 
-    
+        insert property;
+        return property.Id;
+    }
 }

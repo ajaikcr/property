@@ -1,99 +1,66 @@
 <template>
     <lightning-card title="Properties">
 
-        <!-- FILTER SECTION -->
+        <!-- FILTERS -->
         <div class="slds-var-p-around_medium slds-grid slds-wrap slds-gutters">
 
-            <div class="slds-col slds-size_1-of-4">
-                <lightning-input
-                    type="number"
-                    label="Min Rent"
-                    value={minPrice}
-                    onchange={handleMinPrice}>
-                </lightning-input>
-            </div>
+            <lightning-input
+                class="slds-col slds-size_1-of-4"
+                type="number"
+                label="Min Rent"
+                name="minRent"
+                onchange={handleChange}>
+            </lightning-input>
 
-            <div class="slds-col slds-size_1-of-4">
-                <lightning-input
-                    type="number"
-                    label="Max Rent"
-                    value={maxPrice}
-                    onchange={handleMaxPrice}>
-                </lightning-input>
-            </div>
+            <lightning-input
+                class="slds-col slds-size_1-of-4"
+                type="number"
+                label="Max Rent"
+                name="maxRent"
+                onchange={handleChange}>
+            </lightning-input>
 
-            <div class="slds-col slds-size_1-of-4">
-                <lightning-combobox
-                    label="Availability Status"
-                    value={status}
-                    options={statusOptions}
-                    onchange={handleStatus}>
-                </lightning-combobox>
-            </div>
+            <lightning-combobox
+                class="slds-col slds-size_1-of-4"
+                label="Availability Status"
+                name="status"
+                options={statusOptions}
+                onchange={handleChange}>
+            </lightning-combobox>
 
-            <div class="slds-col slds-size_1-of-4">
-                <lightning-combobox
-                    label="Furnishing Status"
-                    value={furnishing}
-                    options={furnishingOptions}
-                    onchange={handleFurnishing}>
-                </lightning-combobox>
-            </div>
+            <lightning-combobox
+                class="slds-col slds-size_1-of-4"
+                label="Furnishing Status"
+                name="furnishing"
+                options={furnishingOptions}
+                onchange={handleChange}>
+            </lightning-combobox>
 
-            <div class="slds-col slds-size_1-of-4 slds-var-m-top_small">
-                <lightning-input
-                    type="number"
-                    label="Distance (KM)"
-                    value={distanceKm}
-                    onchange={handleDistance}>
-                </lightning-input>
+            <lightning-input
+                class="slds-col slds-size_1-of-4"
+                type="number"
+                label="Distance (KM)"
+                name="distanceKm"
+                onchange={handleChange}>
+            </lightning-input>
+
+            <div class="slds-col slds-size_1-of-1 slds-var-m-top_small">
+                <lightning-button
+                    label="Clear Filters"
+                    onclick={handleClear}>
+                </lightning-button>
             </div>
         </div>
 
-        <!-- PROPERTY LIST -->
-        <template if:true={properties}>
-            <div class="slds-var-p-around_medium">
-                <template for:each={properties} for:item="prop">
-                    <div
-                        key={prop.Id}
-                        class="slds-box slds-var-m-bottom_small">
-
-                        <p><b>{prop.Name}</b></p>
-                        <p>{prop.City__c}</p>
-                        <p>₹ {prop.Rent__c}</p>
-                        <p>{prop.Status__c} | {prop.Furnishing_Status__c}</p>
-
-                    </div>
-                </template>
+        <!-- LIST -->
+        <template for:each={properties} for:item="p">
+            <div key={p.Id} class="slds-box slds-var-m-around_small">
+                <strong>{p.Name}</strong><br/>
+                {p.City__c}<br/>
+                ₹ {p.Rent__c}<br/>
+                {p.Status__c} | {p.Furnishing_Status__c}
             </div>
         </template>
-
-        <template if:false={properties}>
-            <div class="slds-var-p-around_medium">
-                No properties found.
-            </div>
-        </template>
-
-        <!-- PAGINATION -->
-        <div class="slds-var-p-around_medium slds-align_absolute-center">
-
-            <lightning-button
-                label="Previous"
-                onclick={handlePrev}
-                disabled={disablePrev}>
-            </lightning-button>
-
-            <span class="slds-var-p-horizontal_medium">
-                Page {currentPage} of {totalPages}
-            </span>
-
-            <lightning-button
-                label="Next"
-                onclick={handleNext}
-                disabled={disableNext}>
-            </lightning-button>
-
-        </div>
 
     </lightning-card>
 </template>
